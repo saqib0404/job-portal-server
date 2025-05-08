@@ -24,6 +24,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         const jobs = client.db("job_portal").collection("jobs")
+        const jobApplications = client.db("job_portal").collection("job_applications")
 
 
         // Job Apis
@@ -33,13 +34,30 @@ async function run() {
             res.send(result)
         })
         // Get Single Job
-        app.get('/:id', async (req, res) => {
+        app.get('/job/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await jobs.findOne(query)
             res.send(result)
         })
 
+
+        // job application
+
+        // apply job
+        app.post('/job-apply', async (req, res) => {
+            const application = req.body;
+            const result = await jobApplications.insertOne(application)
+            res.send(result)
+        })
+
+        // get applied job
+        app.get('/job-apply', async (req, res) => {
+            const email = req.query.email;
+            const query = { applicantEmail: email }
+            const result = await jobApplications.find(query).toArray();
+            res.send(result)
+        })
 
 
         // Send a ping to confirm a successful connection
