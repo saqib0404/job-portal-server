@@ -52,11 +52,24 @@ async function run() {
         })
 
         // get applied job
-        app.get('/job-apply', async (req, res) => {
+        app.get('/job-applications', async (req, res) => {
             const email = req.query.email;
             const query = { applicantEmail: email }
             const result = await jobApplications.find(query).toArray();
+
+            for(const application of result){
+                const query1 = { _id: new ObjectId(application.job_id) }
+                const job = await jobs.findOne(query1);
+                if(job){
+                    application.title = job.title
+                    application.applicationDeadline= job.applicationDeadline;
+                    application.status= job.status;
+                    application.location = job.location;
+                    application.company_logo = job.company_logo
+                }
+            }
             res.send(result)
+
         })
 
 
