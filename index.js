@@ -29,8 +29,13 @@ async function run() {
 
         // Job Apis
         // Get all jobs
-        app.get('/', async (req, res) => {
-            const result = await jobs.find({}).toArray();
+        app.get('/jobs', async (req, res) => {
+            const email = req.query.email
+            let query ={}
+            if(email){
+                query= {hr_email:email}
+            }
+            const result = await jobs.find(query).toArray();
             res.send(result)
         })
         // Get Single Job
@@ -38,6 +43,12 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await jobs.findOne(query)
+            res.send(result)
+        })
+        // Create Job
+        app.post('/jobs', async (req, res) => {
+            const job = req.body;
+            const result = await jobs.insertOne(job)
             res.send(result)
         })
 
@@ -68,6 +79,14 @@ async function run() {
                     application.company_logo = job.company_logo
                 }
             }
+            res.send(result)
+
+        })
+
+        app.get('/posted-jobs/:job_id', async (req, res) => {
+            const id = req.params.job_id;
+            const query = { job_id: id }
+            const result = await jobApplications.find(query).toArray();
             res.send(result)
 
         })
