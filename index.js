@@ -8,7 +8,10 @@ const app = express()
 const port = process.env.PORT || 5000
 
 // middle wares
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173'], // your React frontend URL
+    credentials: true,              // allow cookies and Authorization headers
+}));
 app.use(express.json())
 app.use(cookieParser())
 
@@ -41,10 +44,19 @@ async function run() {
             res.cookie("Token", token, {
                 httpOnly: true,
                 secure: false,
-                sameSite: "Strict"
+                // sameSite: "Strict"
             })
                 .send({ message: "Token issued" })
         })
+
+        app.post('/logout', (req, res) => {
+            res.clearCookie('Token', {
+                httpOnly: true,
+                secure: false, // same as when setting the cookie
+                // sameSite: 'Strict',
+            })
+                .send({ message: 'Logged out' });
+        });
 
 
         // Job Apis
