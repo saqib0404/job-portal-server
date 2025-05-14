@@ -15,6 +15,25 @@ app.use(cors({
 app.use(express.json())
 app.use(cookieParser())
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.Token;
+
+    if (!token) {
+        return res.status(401).send({ message: "unauthorized access" })
+    }
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: "unauthorized access" })
+        }
+
+        req.userObj = decoded
+        next();
+    })
+
+
+}
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tlbypdj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -95,10 +114,16 @@ async function run() {
         })
 
         // get applied job
-        app.get('/job-applications', async (req, res) => {
+        app.get('/job-applications', verifyToken, async (req, res) => {
             const email = req.query.email;
             const query = { applicantEmail: email }
             const result = await jobApplications.find(query).toArray();
+
+            // console.log(req.userObj.user);
+            if (req.userObj.user !== email) {
+                return res.status(403).send({ message: "forbidden access" })
+            }
+
 
             for (const application of result) {
                 const query1 = { _id: new ObjectId(application.job_id) }
