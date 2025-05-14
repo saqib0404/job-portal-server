@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express')
+const jwt = require("jsonwebtoken")
+const cookieParser = require('cookie-parser');
 const cors = require('cors')
 const app = express()
 const port = process.env.PORT || 5000
@@ -8,6 +10,7 @@ const port = process.env.PORT || 5000
 // middle wares
 app.use(cors());
 app.use(express.json())
+app.use(cookieParser())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.tlbypdj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -27,13 +30,30 @@ async function run() {
         const jobApplications = client.db("job_portal").collection("job_applications")
 
 
+        // Auth related
+        app.post("/jwt", (req, res) => {
+            const user = req.body
+
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+                expiresIn: '1h'
+            })
+
+            res.cookie("Token", token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "Strict"
+            })
+                .send({ message: "Token issued" })
+        })
+
+
         // Job Apis
         // Get all jobs
         app.get('/jobs', async (req, res) => {
             const email = req.query.email
-            let query ={}
-            if(email){
-                query= {hr_email:email}
+            let query = {}
+            if (email) {
+                query = { hr_email: email }
             }
             const result = await jobs.find(query).toArray();
             res.send(result)
@@ -68,13 +88,13 @@ async function run() {
             const query = { applicantEmail: email }
             const result = await jobApplications.find(query).toArray();
 
-            for(const application of result){
+            for (const application of result) {
                 const query1 = { _id: new ObjectId(application.job_id) }
                 const job = await jobs.findOne(query1);
-                if(job){
+                if (job) {
                     application.title = job.title
-                    application.applicationDeadline= job.applicationDeadline;
-                    application.status= job.status;
+                    application.applicationDeadline = job.applicationDeadline;
+                    application.status = job.status;
                     application.location = job.location;
                     application.company_logo = job.company_logo
                 }
